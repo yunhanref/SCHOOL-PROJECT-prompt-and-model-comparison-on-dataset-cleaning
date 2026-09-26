@@ -1,0 +1,8 @@
+Elimde meme kanseri teşhisi için kullanılan bir veri seti var. Veri setini makine öğrenmesinde kullanmadan önce temizlemem gerekiyor.
+
+Veri setini inceleyip hatalı, eksik, gereksiz veya bozulmuş verileri tespit ederek temizle. Eksik değerleri, yanlış veri tiplerini, duplicate kayıtları, aykırı değerleri, gereksiz sütunları ve sütun isimlerindeki problemleri kontrol et.
+
+Veri setindeki önemli bilgileri mümkün olduğunca koru ve gereksiz yere veri silme. Temizleme işlemi bittikten sonra makine öğrenmesi için kullanılabilecek temiz bir veri seti oluştur.
+
+Sonuç olarak temizlenmiş veri setini bana ver ve yaptığın önemli değişiklikleri kısaca açıkla. 
+

@@ -1,0 +1,103 @@
+============================================================
+DATASET
+============================================================
+Shape: (573, 33)
+Diagnosis values: ['M' 'B']
+Final target values: [np.int64(0), np.int64(1)]
+Target distribution:
+diagnosis
+0    360
+1    213
+Name: count, dtype: int64
+
+Missing values detected:
+radius_mean                 21
+texture_mean                18
+perimeter_mean              23
+area_mean                   15
+smoothness_mean             22
+compactness_mean            20
+concavity_mean               8
+concave points_mean         15
+symmetry_mean               17
+fractal_dimension_mean      17
+radius_se                   12
+texture_se                  15
+perimeter_se                17
+area_se                     17
+smoothness_se               20
+compactness_se              10
+concavity_se                16
+concave points_se           17
+symmetry_se                 18
+fractal_dimension_se        21
+radius_worst                16
+texture_worst               10
+perimeter_worst             19
+area_worst                  15
+smoothness_worst            17
+compactness_worst           25
+concavity_worst             15
+concave points_worst        15
+symmetry_worst              20
+fractal_dimension_worst     21
+irrelevant_feature         284
+dtype: int64
+
+============================================================
+FINAL DATA CHECK
+============================================================
+X shape: (573, 31)
+y shape: (573,)
+Missing values in X: 0
+Missing values in y: 0
+Classes: [np.int64(0), np.int64(1)]
+Class distribution:
+diagnosis
+0    360
+1    213
+Name: count, dtype: int64
+
+============================================================
+TRAIN / TEST
+============================================================
+Training samples: 458
+Testing samples: 115
+
+============================================================
+LOGISTIC REGRESSION RESULTS
+============================================================
+Accuracy : 0.9652
+Precision: 0.9333
+Recall   : 0.9767
+F1 Score : 0.9545
+ROC-AUC  : 0.9948
+
+============================================================
+CONFUSION MATRIX
+============================================================
+[[69  3]
+ [ 1 42]]
+
+============================================================
+CLASSIFICATION REPORT
+============================================================
+               precision    recall  f1-score   support
+
+   Benign (B)       0.99      0.96      0.97        72
+Malignant (M)       0.93      0.98      0.95        43
+
+     accuracy                           0.97       115
+    macro avg       0.96      0.97      0.96       115
+ weighted avg       0.97      0.97      0.97       115
+
+
+============================================================
+SUMMARY
+============================================================
+   Metric    Score
+ Accuracy 0.965217
+Precision 0.933333
+   Recall 0.976744
+ F1 Score 0.954545
+  ROC-AUC 0.994832

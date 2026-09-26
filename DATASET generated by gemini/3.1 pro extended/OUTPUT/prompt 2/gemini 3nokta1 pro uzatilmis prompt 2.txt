@@ -1,0 +1,118 @@
+Pipeline Mechanisms & Cleaning Decisions
+Structure & Fake Features: The script standardizes all column names and dynamically filters out any features that do not begin with known cell nucleus properties (e.g., radius, texture, perimeter). This automatically drops injected, irrelevant columns alongside common dataset artifacts like unnamed:_32. The id column is safely isolated in the DataFrame index.
+
+Missing Values & Data Types: Textual placeholders are overwritten as np.nan. All feature columns are forcefully coerced to numeric data types, turning string artifacts into missing values. Remaining missing data is imputed using the column median to ensure extreme outliers do not skew the reconstruction.
+
+Duplicates: Exact duplicate records are detected and stripped to prevent model overfitting.
+
+Outliers & Physical Constraints: Infinite values (inf, -inf) are replaced with NaN prior to imputation. Because dimensions like radius and area cannot be physically negative, negative values are treated as data-entry sign corruptions and corrected via their absolute value (.abs()), preserving the observation without destructive row deletion.
+
+Target Variable: The diagnosis column is standardized. Rows with unrecoverable target labels (anything other than 'M' or 'B') are dropped entirely, as guessing the target variable introduces critical bias into downstream classification.
+
+Are there any specific edge cases or unusual artifacts you suspect might exist in data.csv that fall outside these standard checks?
+
+
+import pandas as pd
+import numpy as np
+
+def clean_diagnostic_data(filepath="data.csv"):
+    try:
+        df = pd.read_csv(filepath)
+    except FileNotFoundError:
+        print(f"Error: Could not find {filepath}.")
+        return
+
+    original_rows, original_cols = df.shape
+    report = []
+
+    # 1. STRUCTURE AND COLUMNS
+    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+    
+    id_col = 'id' if 'id' in df.columns else None
+    target_col = 'diagnosis' if 'diagnosis' in df.columns else None
+    
+    if id_col:
+        df = df.set_index(id_col)
+    
+    # Valid prefixes for the Wisconsin Breast Cancer dataset
+    valid_prefixes = ('radius', 'texture', 'perimeter', 'area', 'smoothness', 
+                      'compactness', 'concavity', 'concave_points', 'symmetry', 'fractal_dimension', 'diagnosis')
+    
+    cols_to_drop = []
+    if 'unnamed:_32' in df.columns:
+        cols_to_drop.append('unnamed:_32')
+        
+    suspicious_cols = [col for col in df.columns if not col.startswith(valid_prefixes) and col != target_col]
+    cols_to_drop.extend(suspicious_cols)
+    
+    if cols_to_drop:
+        df = df.drop(columns=cols_to_drop)
+        report.append(f"Removed {len(cols_to_drop)} suspicious/irrelevant columns: {cols_to_drop}")
+
+    # 2. MISSING VALUES & DATA TYPES
+    missing_placeholders = ['n/a', 'unknown', 'missing', '?', 'none', '', 'nan', 'null']
+    df = df.replace(missing_placeholders, np.nan)
+    
+    feature_cols = [col for col in df.columns if col != target_col]
+    
+    # Coerce hidden strings in numerical columns to NaN
+    for col in feature_cols:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+    inf_count = np.isinf(df[feature_cols]).values.sum()
+    if inf_count > 0:
+        df = df.replace([np.inf, -np.inf], np.nan)
+        report.append(f"Replaced {inf_count} infinite values with NaN.")
+
+    # Impute missing values
+    nan_counts = df[feature_cols].isna().sum()
+    cols_with_nans = nan_counts[nan_counts > 0].index.tolist()
+    if cols_with_nans:
+        df[feature_cols] = df[feature_cols].fillna(df[feature_cols].median())
+        report.append(f"Imputed missing values in columns {cols_with_nans} using the column median.")
+
+    # 3. DUPLICATE RECORDS
+    initial_duplicates = df.duplicated().sum()
+    if initial_duplicates > 0:
+        df = df.drop_duplicates()
+        report.append(f"Removed {initial_duplicates} exact duplicate rows.")
+
+    # 4. OUTLIERS & INVALID DATA
+    # Correct physically impossible negative measurements
+    negative_corrections = 0
+    for col in feature_cols:
+        neg_mask = df[col] < 0
+        if neg_mask.any():
+            df.loc[neg_mask, col] = df.loc[neg_mask, col].abs()
+            negative_corrections += neg_mask.sum()
+    if negative_corrections > 0:
+        report.append(f"Corrected {negative_corrections} impossible negative values using absolute values (assumed sign error).")
+
+    # 5. TARGET VARIABLE
+    if target_col:
+        df[target_col] = df[target_col].astype(str).str.strip().str.upper()
+        valid_targets = ['M', 'B']
+        invalid_target_mask = ~df[target_col].isin(valid_targets)
+        invalid_target_count = invalid_target_mask.sum()
+        if invalid_target_count > 0:
+            df = df[~invalid_target_mask]
+            report.append(f"Dropped {invalid_target_count} rows with corrupted target labels.")
+    
+    # 6. OUTPUT
+    final_rows, final_cols = df.shape
+    cleaned_filepath = "cleaned_data.csv"
+    df.to_csv(cleaned_filepath)
+    
+    print("=== DATA CLEANING REPORT ===")
+    print(f"Original shape: {original_rows} rows, {original_cols} columns")
+    print(f"Cleaned shape: {final_rows} rows, {final_cols} columns (excluding '{id_col}' index)")
+    print("\nModifications:")
+    for item in report:
+        print(f"- {item}")
+    print("\nUncertainty Notes:")
+    print("- Negative numerical values were converted to absolute values rather than deleted, assuming data-entry sign errors. If they were sensor failures, imputation would be required instead.")
+    print("- Imputation relied on the median rather than the mean to prevent remaining statistical outliers from skewing the reconstructed values.")
+    print(f"\nCleaned dataset exported to: {cleaned_filepath}")
+
+if __name__ == "__main__":
+    clean_diagnostic_data("data.csv")

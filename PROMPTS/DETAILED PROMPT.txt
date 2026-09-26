@@ -1,0 +1,138 @@
+You are an experienced data-cleaning and machine-learning data-preparation specialist.
+
+I will provide you with a corrupted version of a breast cancer diagnostic dataset. Your task is to inspect the dataset carefully, identify data-quality problems, and produce a clean version that is suitable for downstream machine-learning classification.
+
+The original dataset should be treated as the intended data structure and meaning. Your goal is to restore the dataset as accurately as possible while preserving valid information.
+
+Please perform the following checks:
+
+
+
+STRUCTURE AND COLUMNS
+
+Inspect all column names and data types.
+
+Identify unnecessary, empty, constant, artificial, or irrelevant columns.
+
+Detect and correct accidental whitespace or formatting problems in column names.
+
+Preserve meaningful original variables.
+
+Do not remove useful features simply because they are highly correlated.
+
+Identify identifier columns such as "id" correctly.
+
+Preserve the target variable "diagnosis".
+
+MISSING VALUES
+
+Detect missing values represented by NaN, None, empty strings, or common textual placeholders such as "N/A", "unknown", "missing", "?", etc.
+
+Determine which missing values are genuine data-quality problems.
+
+Handle missing values in numerical features using an appropriate data-driven method.
+
+Do not arbitrarily invent values.
+
+Do not modify or impute the target variable unless absolutely necessary.
+
+DATA TYPES AND INVALID VALUES
+
+Identify numerical columns that contain invalid textual values.
+
+Convert numerical features back to appropriate numeric data types after cleaning.
+
+Detect invalid values such as inf or -inf.
+
+Do not change valid numerical values unnecessarily.
+
+DUPLICATE RECORDS
+
+Detect exact duplicate rows.
+
+Remove true duplicate records when appropriate.
+
+Do not remove observations merely because they are similar to other observations.
+
+OUTLIERS
+
+Inspect numerical features for suspicious or extreme observations.
+
+Distinguish between legitimate extreme observations and values that appear to be data corruption.
+
+Correct or remove clearly corrupted artificial outliers when there is sufficient evidence.
+
+Do not automatically delete every statistical outlier.
+
+TARGET VARIABLE
+
+Preserve the "diagnosis" variable and its original class information.
+
+Do not modify valid target labels.
+
+Do not use the target variable to artificially alter feature values.
+
+DATA PRESERVATION
+
+This is especially important:
+
+Only modify, remove, or reconstruct values when there is evidence that they are incorrect or corrupted.
+
+Do not unnecessarily modify valid observations.
+
+Do not unnecessarily delete rows or columns.
+
+Do not perform feature engineering.
+
+Do not perform feature selection.
+
+Do not apply PCA.
+
+Do not apply SMOTE or other class-balancing techniques.
+
+Do not normalize or standardize the features.
+
+Do not optimize the dataset specifically for a machine-learning algorithm.
+
+Do not make predictions or classification decisions as part of the cleaning process.
+
+The purpose of this task is DATA CLEANING ONLY.
+
+After cleaning:
+
+
+
+Verify that numerical features have appropriate data types.
+
+Verify that missing/invalid values have been handled appropriately.
+
+Verify that exact duplicates have been addressed.
+
+Verify that unnecessary or corrupted structural elements have been removed or corrected.
+
+Verify that the target variable remains valid.
+
+Check that the cleaned dataset has not suffered unnecessary data loss.
+
+Finally, provide:
+
+
+
+The cleaned dataset.
+
+A concise report describing what you detected and what you changed.
+
+The number of rows before and after cleaning.
+
+The number of columns before and after cleaning.
+
+A list of modified, removed, or reconstructed columns/values where possible.
+
+Any cleaning decisions that involved uncertainty.
+
+Do not make assumptions that require information not present in the dataset. When a value is uncertain, preserve the original observation rather than making an unsupported alteration.
+
+
+
+NOTE: PAY EXTRA ATTENTION TO FEATURE NAMES. THERE MIGHT BE FUNNY ONES THAT DOESNT BELONG TO THE BREAST CANCER FEATURES. 
+

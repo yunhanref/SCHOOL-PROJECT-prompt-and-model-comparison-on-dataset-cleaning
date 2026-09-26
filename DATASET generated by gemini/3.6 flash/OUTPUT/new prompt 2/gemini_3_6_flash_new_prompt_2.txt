@@ -1,0 +1,78 @@
+import pandas as pd
+import numpy as np
+
+# Load dataset
+df = pd.read_csv("data.csv")
+
+# 1. Clean Column Names
+df.columns = df.columns.str.strip()
+
+# 2. Handle Textual Missing Markers & Data Types
+# Standardize common missing value string representations to NaN
+df.replace(["?", "NA", "N/A", "null", "None", "", " "], np.nan, inplace=True)
+
+# 3. Clean 'diagnosis' Column
+df["diagnosis"] = df["diagnosis"].astype(str).str.strip().str.upper()
+df = df[df["diagnosis"].isin(["B", "M"])]
+
+# 4. Remove Irrelevant, Empty, Constant, or Synthetic Columns
+# Drop completely empty columns
+df.dropna(how="all", axis=1, inplace=True)
+
+# Drop constant/single-value columns
+constant_cols = [col for col in df.columns if df[col].nunique(dropna=True) <= 1]
+df.drop(columns=constant_cols, inplace=True)
+
+# Drop explicitly non-medical features or identifiers (e.g., Unnamed, index, artificial columns)
+# Keeping 'id' if present as an identifier (not as a predictive feature)
+drop_cols = [col for col in df.columns if "unnamed" in col.lower() or "synthetic" in col.lower() or "random" in col.lower()]
+df.drop(columns=drop_cols, inplace=True)
+
+# 5. Handle Numeric Conversions & Outliers/Corruption
+numeric_cols = [col for col in df.columns if col not in ["id", "diagnosis"]]
+
+for col in numeric_cols:
+    df[col] = pd.to_numeric(df[col], errors="coerce")
+    
+    # Remove obvious corruption like negative values for physical measurements (radius, area, etc.)
+    df.loc[df[col] < 0, col] = np.nan
+    
+    # Identify severe corruption (e.g., values several orders of magnitude higher than standard range)
+    q1 = df[col].quantile(0.25)
+    q3 = df[col].quantile(0.75)
+    iqr = q3 - q1
+    upper_bound = q3 + 10 * iqr  # Using a generous threshold to preserve genuine extreme medical observations
+    df.loc[df[col] > upper_bound, col] = np.nan
+
+# 6. Deduplication
+df.drop_duplicates(inplace=True)
+
+# Save cleaned dataset
+df.to_csv("cleaned_data.csv", index=False)
+
+
+
+
+
+Summary of Actions Taken
+Column Name Standardization: Stripped leading and trailing whitespace from all feature names to prevent indexing errors.
+
+Missing Marker Conversion: Identified non-standard missing value indicators (?, NA, null, spaces) and cast them to standard missing values (NaN).
+
+Target Validation (diagnosis): Cleaned whitespace and casing for the target variable, filtering out any records with missing or invalid labels outside of standard B (Benign) and M (Malignant) classes.
+
+Feature Filtering:
+
+Removed fully empty or constant features containing zero variance.
+
+Dropped artificial, synthetic, or uninformative index columns (e.g., Unnamed: 32) while retaining id strictly as an identifier.
+
+Data Type Correction & Corruption Removal:
+
+Coerced numerical features to proper float data types.
+
+Replaced physically impossible negative values in tumor dimension features with NaN.
+
+Set extremely large, mathematically improbable outliers (e.g., orders of magnitude above normal distributions due to formatting/system corruption) to NaN while preserving valid long-tail clinical extreme measurements.
+
+Deduplication: Removed exact duplicate rows across the dataset.

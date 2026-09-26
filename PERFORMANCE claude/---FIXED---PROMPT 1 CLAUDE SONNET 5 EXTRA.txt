@@ -1,0 +1,70 @@
+CLAUDE'IN HATASI DUZELTILDIGI ZAMAN (DATA LEAKAGE VARMIS)
+============================================================
+DATASET
+============================================================
+Shape: (569, 33)
+Diagnosis values: ['M' 'B']
+Final target values: [np.int64(0), np.int64(1)]
+Target distribution:
+diagnosis
+0    357
+1    212
+Name: count, dtype: int64
+
+============================================================
+FINAL DATA CHECK
+============================================================
+X shape: (569, 30)
+y shape: (569,)
+Missing values in X: 0
+Missing values in y: 0
+Classes: [np.int64(0), np.int64(1)]
+Class distribution:
+diagnosis
+0    357
+1    212
+Name: count, dtype: int64
+
+============================================================
+TRAIN / TEST
+============================================================
+Training samples: 455
+Testing samples: 114
+
+============================================================
+LOGISTIC REGRESSION RESULTS
+============================================================
+Accuracy : 0.9825
+Precision: 0.9762
+Recall   : 0.9762
+F1 Score : 0.9762
+ROC-AUC  : 0.9993
+
+============================================================
+CONFUSION MATRIX
+============================================================
+[[71  1]
+ [ 1 41]]
+
+============================================================
+CLASSIFICATION REPORT
+============================================================
+               precision    recall  f1-score   support
+
+   Benign (B)       0.99      0.99      0.99        72
+Malignant (M)       0.98      0.98      0.98        42
+
+     accuracy                           0.98       114
+    macro avg       0.98      0.98      0.98       114
+ weighted avg       0.98      0.98      0.98       114
+
+
+============================================================
+SUMMARY
+============================================================
+   Metric    Score
+ Accuracy 0.982456
+Precision 0.976190
+   Recall 0.976190
+ F1 Score 0.976190
+  ROC-AUC 0.999339

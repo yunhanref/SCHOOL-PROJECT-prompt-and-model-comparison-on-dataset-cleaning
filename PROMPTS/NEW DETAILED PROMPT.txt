@@ -1,0 +1,23 @@
+Clean this corrupted breast cancer dataset for machine learning.
+
+First, inspect the dataset and understand what each column represents. For every feature, consider whether it is a meaningful breast-cancer/tumor-related measurement, an identifier, or an irrelevant/artificial column. Remove clearly irrelevant, empty, constant, randomly generated, or artificial columns, while preserving legitimate medical features.
+
+Check and correct:
+
+* missing values and textual missing markers
+* incorrect data types and invalid values
+* accidental whitespace in column names
+* exact duplicate rows
+* suspicious outliers and extreme/absurd values
+
+Pay particular attention to numerical values that are implausibly large or small. Distinguish genuine medical observations from obvious data corruption; do not remove legitimate extreme observations without justification.
+
+Treat `id` as an identifier, not a medical feature. Keep it only if it is useful for identifying records; do not use it as a predictive feature.
+
+Preserve the `diagnosis` target and its valid `B`/`M` labels. Do not perform feature engineering, PCA, SMOTE, normalization, or model-specific optimization.
+
+Most importantly: **change only data that is reasonably identifiable as incorrect or unnecessary, and preserve valid information. Do not unnecessarily delete rows, features, or values.**
+
+Return the cleaned dataset and briefly report what you changed and why.
+
+

@@ -1,0 +1,23 @@
+Veri setini inceledim ve gerçekten de birden fazla veri kalitesi sorunu tespit ettim. Wisconsin Meme Kanseri veri setinin (569 hasta) bilinçli olarak bozulmuş bir versiyonu olduğunu doğruladım — temizlik sonrası B/M dağılımı (357/212) bunu teyit ediyor. Yaptığım analiz ve düzeltmeler:
+
+Yapılan başlıca temizlik işlemleri
+
+Sütun isimleri: Bazı isimlerde baştan/sondan boşluklar vardı ("  area_se  " gibi), bazılarında da boşluk/alt çizgi karışıktı ("concave points_mean"). Hepsi concave_points_mean gibi tutarlı bir formata çevrildi.
+
+Gereksiz sütunlar (4 adet silindi):
+
+Unnamed: 32 → %100 boş (orijinal dosyanın sondaki fazladan virgülünden kaynaklanan bir artık)
+constant_column → tüm satırlarda tek bir değer (1), varyansı sıfır, model için hiçbir bilgi taşımıyor
+random_noise, irrelevant_feature → istatistiksel testte (t-test) teşhis (diagnosis) ile anlamlı bir ilişkisi çıkmadı, gerçek özelliklerle korelasyonu yok denecek kadar düşük (~0.01–0.03)
+
+Yanlış veri tipleri / gizli eksik değerler: 28 sayısal sütun, içlerine serpiştirilmiş "error", "unknown", "?", "missing" gibi metinsel ifadeler yüzünden metin (string) olarak okunuyordu. Bunlar gerçek eksik değer (NaN) olarak birleştirilip sütunlar sayısala çevrildi.
+
+Bozuk (imkânsız) değerler: Radius, alan, perimetre gibi 30 özelliğin hiçbiri negatif olamaz; toplam 72 hücrede işaret hatası (negatif değer) bulundu ve mutlak değer alınarak düzeltildi — veri silinmeden düzeltilmiş oldu. Ayrıca texture_worst sütununda tek bir kayıtta (0.136), sütunun geri kalanından 88 kat düşük, gerçekçi olmayan bir değer tespit edildi; bu basit bir işaret hatasından farklı olduğu için eksik veri gibi işaretlendi.
+
+Aykırı değerler: Çok geniş bir eşik olan Tukey 3×IQR kuralıyla (standart 1.5×IQR yerine kasıtlı olarak geniş tutuldu ki agresif tümörlere ait gerçek yüksek değerler yanlışlıkla silinmesin) 231 hücrede belirgin biçimde aşırı uç değer bulundu ve eksik veri olarak işaretlendi.
+
+Eksik değer doldurma: Toplam 655 eksik hücre (orijinal + düzeltilenler), teşhis grubuna göre (B/M) medyan ile dolduruldu — global medyan yerine grup medyanı kullanmak iyi/kötü huylu vakaların farklı dağılımlarını korudu.
+
+Tekrarlanan kayıtlar: Aynı hasta id'sine sahip 5 çift kayıt bulundu (muhtemelen veri girişi tekrarı); her çiftten eksik verisi daha az olan satır tutuldu.
+
+Sonuç: 574 satır → 569 benzersiz hasta (357 iyi huylu / 212 kötü huylu — bilinen orijinal dağılımla birebir örtüşüyor), 36 sütun → 33 sütun, hiç eksik/negatif/aykırı değer kalmadı. Ayrıca modelleme kolaylığı için orijinal diagnosis (M/B) korunarak yanına diagnosis_encoded (1/0) sütunu eklendi. id sütunu izlenebilirlik için tutuldu; modele özellik olarak değil sadece referans olarak dahil edilmesi önerilir.

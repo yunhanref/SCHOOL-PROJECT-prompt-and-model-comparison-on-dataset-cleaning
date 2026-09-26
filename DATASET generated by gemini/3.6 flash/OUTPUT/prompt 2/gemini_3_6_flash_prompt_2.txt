@@ -1,0 +1,84 @@
+import pandas as pd
+import numpy as np
+
+# ==============================================================================
+# 1. LOAD DATASET
+# ==============================================================================
+df = pd.read_csv('data.csv')
+
+# Record initial dimensions for verification
+rows_before, cols_before = df.shape
+
+# ==============================================================================
+# 2. STRUCTURE & COLUMN NAMES CLEANING
+# ==============================================================================
+# Correct accidental leading/trailing whitespace formatting in column names
+df.columns = df.columns.str.strip()
+
+# Identify and remove artificial, constant, empty, and non-informative columns:
+# - 'Unnamed: 32': Completely empty column (100% NaN)
+# - 'constant_column': Single constant value across all rows (zero variance)
+# - 'random_noise' & 'irrelevant_feature': Artificial noise columns
+artificial_cols = ['Unnamed: 32', 'random_noise', 'irrelevant_feature', 'constant_column']
+df.drop(columns=[col for col in artificial_cols if col in df.columns], inplace=True)
+
+# ==============================================================================
+# 3. TEXTUAL PLACEHOLDERS & MISSING VALUES
+# ==============================================================================
+# Replace common textual placeholders with standard NaN
+placeholders = ['error', 'unknown', 'missing', '?', 'N/A', 'None', '', 'null', 'NaN']
+df.replace(placeholders, np.nan, inplace=True)
+
+# Preserve target variable ('diagnosis') and identify numerical features
+num_cols = [col for col in df.columns if col not in ['id', 'diagnosis']]
+
+# ==============================================================================
+# 4. DATA TYPES & CORRUPTED NUMERICAL VALUES
+# ==============================================================================
+# Convert numerical features back to numeric data types (float64)
+for col in num_cols:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
+
+# Handle invalid values: infinite values
+df.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+# Handle corrupted artificial outliers:
+# Physical features (radius, perimeter, area, smoothness, etc.) cannot be negative.
+# Non-physical negative values are treated as data corruption and set to NaN.
+for col in num_cols:
+    df.loc[df[col] < 0, col] = np.nan
+
+# ==============================================================================
+# 5. DATA-DRIVEN IMPUTATION
+# ==============================================================================
+# Impute missing feature values using the class-conditional median (grouped by 'diagnosis').
+# This preserves feature distributions without modifying target labels or predicting outcomes.
+for col in num_cols:
+    df[col] = df.groupby('diagnosis')[col].transform(lambda g: g.fillna(g.median()))
+
+# ==============================================================================
+# 6. DUPLICATE RECORDS
+# ==============================================================================
+# Remove true duplicate patient records (5 duplicate pairs identified by ID + features)
+df.drop_duplicates(subset=['id'] + num_cols, inplace=True)
+
+# Save the final cleaned dataset
+df.to_csv('cleaned_breast_cancer.csv', index=False)
+
+# ==============================================================================
+# VERIFICATION REPORT
+# ==============================================================================
+rows_after, cols_after = df.shape
+
+print("=" * 60)
+print("DATA CLEANING COMPLETE")
+print("=" * 60)
+print(f"Rows before:     {rows_before} | Rows after:     {rows_after}")
+print(f"Columns before:  {cols_before}  | Columns after:  {cols_after}")
+print(f"Total nulls:     {df.isnull().sum().sum()}")
+print(f"Target distribution:\n{df['diagnosis'].value_counts().to_string()}")
+print("=" * 60)
+
+
+
+Cleaned Dataset Summary & Audit ReportDimensions Before Cleaning: 574 rows $\times$ 36 columnsDimensions After Cleaning: 569 rows $\times$ 32 columnsRows Removed: 5 exact duplicate patient records (id: 859575, 8670, 87930, 907915, 921385).Columns Removed (4 total): Unnamed: 32 (100% empty), constant_column (single value), random_noise, and irrelevant_feature.Column Formatting Corrected: Stripped whitespace from headers like '  fractal_dimension_mean  ' and '  area_se  '.Missing & Corrupted Data Cleaned: Converted string placeholders ("error", "unknown", "missing", "?") and impossible negative physical measurements ($<0$) to NaN, then imputed via class-conditional median (M vs. B).Preserved: All 30 authentic Wisconsin Breast Cancer features, id, and target variable diagnosis without applying feature scaling, feature selection, or predictions.

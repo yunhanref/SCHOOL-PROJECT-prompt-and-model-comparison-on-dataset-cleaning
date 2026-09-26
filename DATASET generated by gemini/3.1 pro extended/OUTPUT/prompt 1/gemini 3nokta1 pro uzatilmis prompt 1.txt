@@ -1,0 +1,63 @@
+Yapılan Önemli Değişiklikler:
+
+Sütun İsimleri ve Yapısal Hatalar: Bazı sütun isimlerindeki (örneğin  fractal_dimension_mean ) görünmez boşluklar temizlenerek daha sonra model kurgularken çıkabilecek KeyError hatalarının önüne geçildi.
+
+Gürültü ve Boyut Azaltma: Veri setinin orijinalinde bulunan tamamen boş Unnamed: 32 sütunu ile birlikte hiçbir tahmin gücü olmayan random_noise ve constant_column gibi sentetik özellikler silindi. Kimlik numarası olan id ise tekrarlayan 5 kopyayı tespit etmek için kullanıldıktan sonra algoritmaları yanıltmaması adına veri setinden çıkarıldı.
+
+Hatalı Veri Tipleri: Sayısal olması gereken ancak hücrelere "error" veya "unknown" gibi manuel olarak girilmiş metinler yüzünden veri tipi object olan sütunlar, pd.to_numeric(errors='coerce') fonksiyonu ile zorlanarak standart float64 yapısına çekildi. Bu işlem metinleri doğrudan NaN değere çevirdi.
+
+Veri Kurtarma (Eksik & Aykırı Değerler): Ortaya çıkan eksik veriler, aykırı değerlerden daha az etkilendiği için medyan (SimpleImputer) kullanılarak dolduruldu. Medikal verilerdeki ekstrem değerler genelde doğal varyasyonu yansıttığı için "silmek" yerine minimum ve maksimum sınırlar belirlenip (%1 ve %99 persentil) değerler bu aralığa baskılandı (clip).
+
+Hedef Enkodajı: Algoritmaların matematiksel işlemleri yapabilmesi için kategorik M ve B değerleri, 1 ve 0 olarak ikili (binary) sisteme dönüştürüldü. Veri seti direkt olarak bir sınıflandırma ardışık düzenine (pipeline) beslenmeye hazır hale getirildi.
+
+
+import pandas as pd
+import numpy as np
+from sklearn.impute import SimpleImputer
+
+def clean_breast_cancer_data(file_path='data.csv'):
+    # 1. Veriyi Yükleme
+    df = pd.read_csv(file_path)
+    
+    # 2. Sütun İsimlerindeki Problemleri Çözme
+    # Başındaki ve sonundaki boşlukları temizliyoruz (örn: '  area_se  ' -> 'area_se')
+    df.columns = df.columns.str.strip()
+    
+    # 3. Duplicate (Tekrarlayan) Kayıtları Temizleme
+    # 'id' sütununa göre tekrar eden kayıtları siliyoruz 
+    df = df.drop_duplicates(subset=['id'], keep='first')
+    
+    # 4. Gereksiz Sütunları Çıkarma
+    # Makine öğrenmesi modeline sinyal sağlamayan, sabit veya tamamen boş sütunları atıyoruz
+    cols_to_drop = ['id', 'Unnamed: 32', 'random_noise', 'irrelevant_feature', 'constant_column']
+    df = df.drop(columns=[col for col in cols_to_drop if col in df.columns])
+    
+    # 5. Yanlış Veri Tiplerini Düzeltme
+    # İçinde 'error', 'unknown' gibi gizli string ifadeler barındıran sayısal sütunları float'a çeviriyoruz. 
+    # Hatalı string'ler NaN (eksik veri) değerine dönüşür.
+    features = df.columns.drop('diagnosis')
+    for col in features:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        
+    # 6. Eksik Verileri Doldurma (Imputation)
+    # Satır kaybı yaşamamak için eksik değerleri o sütunun medyanı ile dolduruyoruz
+    imputer = SimpleImputer(strategy='median')
+    df[features] = imputer.fit_transform(df[features])
+    
+    # 7. Aykırı Değerleri (Outliers) İşleme
+    # Veri silmek yerine, aykırı değerleri 1. ve 99. persentillerle sınırlandırıyoruz (Winsorization)
+    for col in features:
+        lower_bound = df[col].quantile(0.01)
+        upper_bound = df[col].quantile(0.99)
+        df[col] = df[col].clip(lower=lower_bound, upper=upper_bound)
+        
+    # 8. Hedef Değişkeni Sayısallaştırma (Encoding)
+    # Lojistik regresyon ve benzeri modellerin işleyebilmesi için hedefi binary formata getiriyoruz
+    # 'M' (Malignant/Kötü Huylu) -> 1, 'B' (Benign/İyi Huylu) -> 0
+    df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
+    
+    return df
+
+# Temizlenmiş veri setini oluşturmak için:
+# clean_df = clean_breast_cancer_data('data.csv')
+# clean_df.to_csv('cleaned_data.csv', index=False)
